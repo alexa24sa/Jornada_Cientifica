@@ -3,378 +3,514 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Detección de Fake News</title>
+    <title>Verificador de Noticias</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg: #0f172a;
-            --card: #1e293b;
-            --accent: #3b82f6;
-            --accent-hover: #2563eb;
-            --fake: #ef4444;
-            --real: #22c55e;
-            --text: #e2e8f0;
-            --muted: #94a3b8;
-            --border: #334155;
+            --bg: #fafafa;
+            --surface: #ffffff;
+            --text-primary: #111827;
+            --text-secondary: #6b7280;
+            --text-tertiary: #9ca3af;
+            --border: #e5e7eb;
+            --border-focus: #111827;
+            --accent: #111827;
+            --accent-soft: #f3f4f6;
+            --fake-color: #dc2626;
+            --fake-bg: #fef2f2;
+            --fake-border: #fecaca;
+            --real-color: #059669;
+            --real-bg: #ecfdf5;
+            --real-border: #a7f3d0;
+            --radius: 8px;
+            --radius-lg: 12px;
+            --shadow-sm: 0 1px 2px rgba(0,0,0,.05);
+            --shadow: 0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.04);
+            --shadow-lg: 0 4px 12px rgba(0,0,0,.08);
+            --transition: .15s ease;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
-            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
             background: var(--bg);
-            color: var(--text);
+            color: var(--text-primary);
             min-height: 100vh;
             display: flex;
             flex-direction: column;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* ---- Top bar ---- */
+        .topbar {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 0 2rem;
+            height: 56px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .topbar-brand {
+            font-size: .9375rem;
+            font-weight: 600;
+            letter-spacing: -.01em;
+            color: var(--text-primary);
+        }
+
+        .topbar-meta {
+            display: flex;
+            gap: 1.5rem;
             align-items: center;
         }
 
-        .container {
-            max-width: 800px;
-            width: 100%;
-            padding: 2rem 1.5rem;
+        .topbar-stat {
+            font-size: .8125rem;
+            color: var(--text-secondary);
         }
 
-        header {
-            text-align: center;
-            margin-bottom: 2rem;
+        .topbar-stat strong {
+            color: var(--text-primary);
+            font-weight: 600;
         }
 
-        header h1 {
-            font-size: 2rem;
-            font-weight: 700;
-            background: linear-gradient(135deg, var(--accent), #a855f7);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-bottom: .5rem;
-        }
-
-        header p {
-            color: var(--muted);
-            font-size: .95rem;
-        }
-
-        .model-info {
+        /* ---- Layout ---- */
+        .layout {
+            flex: 1;
             display: flex;
-            gap: 1rem;
-            justify-content: center;
-            flex-wrap: wrap;
-            margin-bottom: 2rem;
+            flex-direction: column;
+            align-items: center;
+            padding: 3rem 1.5rem 2rem;
         }
 
-        .badge {
-            background: var(--card);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: .5rem 1rem;
-            font-size: .85rem;
+        .hero {
+            text-align: center;
+            max-width: 520px;
+            margin-bottom: 2.5rem;
         }
 
-        .badge strong { color: var(--accent); }
+        .hero h1 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            letter-spacing: -.025em;
+            line-height: 1.2;
+            margin-bottom: .625rem;
+        }
 
+        .hero p {
+            font-size: .9375rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        /* ---- Card ---- */
         .card {
-            background: var(--card);
+            background: var(--surface);
             border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 1.5rem;
-            margin-bottom: 1.5rem;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow);
+            width: 100%;
+            max-width: 600px;
         }
 
+        .card-body {
+            padding: 1.5rem;
+        }
+
+        /* ---- Tabs ---- */
         .tabs {
             display: flex;
-            gap: .5rem;
-            margin-bottom: 1.25rem;
+            border-bottom: 1px solid var(--border);
         }
 
         .tab-btn {
             flex: 1;
-            padding: .65rem;
-            background: transparent;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            color: var(--muted);
+            padding: .875rem 1rem;
+            background: none;
+            border: none;
+            border-bottom: 2px solid transparent;
+            font-family: inherit;
+            font-size: .875rem;
+            font-weight: 500;
+            color: var(--text-tertiary);
             cursor: pointer;
-            font-size: .9rem;
-            transition: all .2s;
+            transition: color var(--transition), border-color var(--transition);
         }
 
+        .tab-btn:hover { color: var(--text-secondary); }
+
         .tab-btn.active {
-            background: var(--accent);
-            color: #fff;
-            border-color: var(--accent);
+            color: var(--text-primary);
+            border-bottom-color: var(--accent);
         }
 
         .tab-content { display: none; }
         .tab-content.active { display: block; }
 
-        label {
+        /* ---- Form ---- */
+        .field-label {
             display: block;
-            font-size: .85rem;
-            color: var(--muted);
-            margin-bottom: .35rem;
+            font-size: .8125rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: .375rem;
         }
 
-        input[type="url"], textarea {
+        .input, .textarea {
             width: 100%;
-            padding: .75rem 1rem;
+            padding: .6875rem .875rem;
             background: var(--bg);
             border: 1px solid var(--border);
-            border-radius: 8px;
-            color: var(--text);
-            font-size: .95rem;
+            border-radius: var(--radius);
+            font-family: inherit;
+            font-size: .875rem;
+            color: var(--text-primary);
             outline: none;
-            transition: border-color .2s;
+            transition: border-color var(--transition), box-shadow var(--transition);
         }
 
-        input[type="url"]:focus, textarea:focus {
-            border-color: var(--accent);
+        .input::placeholder, .textarea::placeholder {
+            color: var(--text-tertiary);
         }
 
-        textarea { resize: vertical; min-height: 120px; }
+        .input:focus, .textarea:focus {
+            border-color: var(--border-focus);
+            box-shadow: 0 0 0 3px rgba(17,24,39,.08);
+        }
 
-        .btn-analizar {
+        .textarea {
+            resize: vertical;
+            min-height: 120px;
+            line-height: 1.5;
+        }
+
+        .btn-primary {
             width: 100%;
-            padding: .85rem;
+            padding: .75rem 1rem;
             margin-top: 1rem;
             background: var(--accent);
             color: #fff;
             border: none;
-            border-radius: 8px;
-            font-size: 1rem;
-            font-weight: 600;
+            border-radius: var(--radius);
+            font-family: inherit;
+            font-size: .875rem;
+            font-weight: 500;
             cursor: pointer;
-            transition: background .2s;
+            transition: opacity var(--transition);
         }
 
-        .btn-analizar:hover { background: var(--accent-hover); }
-        .btn-analizar:disabled { opacity: .5; cursor: not-allowed; }
+        .btn-primary:hover { opacity: .85; }
+        .btn-primary:disabled { opacity: .4; cursor: not-allowed; }
 
-        /* Resultado */
-        .resultado { display: none; }
-        .resultado.visible { display: block; }
-
-        .resultado-header {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: .75rem;
-            margin-bottom: 1.25rem;
-        }
-
-        .resultado-label {
-            font-size: 1.6rem;
-            font-weight: 700;
-            text-transform: uppercase;
-        }
-
-        .resultado-label.fake { color: var(--fake); }
-        .resultado-label.real { color: var(--real); }
-
-        .resultado-icon {
-            font-size: 2rem;
-        }
-
-        .barras {
-            display: flex;
-            flex-direction: column;
-            gap: .75rem;
-        }
-
-        .barra-container {
-            display: flex;
-            align-items: center;
-            gap: .75rem;
-        }
-
-        .barra-label {
-            width: 55px;
-            font-size: .85rem;
-            font-weight: 600;
-            text-align: right;
-        }
-
-        .barra-track {
-            flex: 1;
-            height: 26px;
-            background: var(--bg);
-            border-radius: 6px;
-            overflow: hidden;
-            position: relative;
-        }
-
-        .barra-fill {
-            height: 100%;
-            border-radius: 6px;
-            transition: width .6s ease;
-            display: flex;
-            align-items: center;
-            justify-content: flex-end;
-            padding-right: 8px;
-            font-size: .8rem;
-            font-weight: 600;
-            min-width: 40px;
-        }
-
-        .barra-fill.fake-bar { background: var(--fake); }
-        .barra-fill.real-bar { background: var(--real); }
-
-        .texto-extraido {
-            margin-top: 1.25rem;
-            padding: 1rem;
-            background: var(--bg);
-            border-radius: 8px;
-            font-size: .85rem;
-            color: var(--muted);
-            max-height: 150px;
-            overflow-y: auto;
-            line-height: 1.5;
-        }
-
-        .accuracy-badge {
-            margin-top: 1rem;
-            text-align: center;
-            font-size: .85rem;
-            color: var(--muted);
-        }
-
-        .accuracy-badge span { color: var(--accent); font-weight: 600; }
-
-        .error-msg {
-            background: rgba(239, 68, 68, .15);
-            border: 1px solid var(--fake);
-            border-radius: 8px;
-            padding: 1rem;
-            color: var(--fake);
-            text-align: center;
+        /* ---- Spinner ---- */
+        .spinner {
             display: none;
+            padding: 1.5rem;
+            text-align: center;
+        }
+
+        .spinner.visible { display: flex; align-items: center; justify-content: center; gap: .625rem; }
+
+        .spinner-dot {
+            width: 6px; height: 6px;
+            background: var(--text-tertiary);
+            border-radius: 50%;
+            animation: pulse 1.2s ease-in-out infinite;
+        }
+        .spinner-dot:nth-child(2) { animation-delay: .15s; }
+        .spinner-dot:nth-child(3) { animation-delay: .3s; }
+
+        @keyframes pulse {
+            0%, 80%, 100% { opacity: .3; transform: scale(.8); }
+            40% { opacity: 1; transform: scale(1); }
+        }
+
+        .spinner-text {
+            font-size: .8125rem;
+            color: var(--text-tertiary);
+        }
+
+        /* ---- Error ---- */
+        .error-msg {
+            display: none;
+            max-width: 600px;
+            width: 100%;
+            margin-top: 1rem;
+            padding: .75rem 1rem;
+            background: var(--fake-bg);
+            border: 1px solid var(--fake-border);
+            border-radius: var(--radius);
+            font-size: .8125rem;
+            color: var(--fake-color);
         }
 
         .error-msg.visible { display: block; }
 
-        .spinner {
+        /* ---- Result card ---- */
+        .resultado {
             display: none;
-            text-align: center;
-            padding: 1.5rem;
-            color: var(--muted);
+            max-width: 600px;
+            width: 100%;
+            margin-top: 1.25rem;
         }
 
-        .spinner.visible { display: block; }
+        .resultado.visible { display: block; }
 
-        .spinner::after {
-            content: '';
-            display: inline-block;
-            width: 24px;
-            height: 24px;
-            border: 3px solid var(--border);
-            border-top-color: var(--accent);
+        .result-verdict {
+            display: flex;
+            align-items: center;
+            gap: .75rem;
+            padding: 1rem 1.25rem;
+            border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+        }
+
+        .result-verdict.fake {
+            background: var(--fake-bg);
+            border: 1px solid var(--fake-border);
+        }
+
+        .result-verdict.real {
+            background: var(--real-bg);
+            border: 1px solid var(--real-border);
+        }
+
+        .verdict-indicator {
+            width: 10px; height: 10px;
             border-radius: 50%;
-            animation: spin .7s linear infinite;
-            vertical-align: middle;
-            margin-right: .5rem;
+            flex-shrink: 0;
         }
 
-        @keyframes spin { to { transform: rotate(360deg); } }
+        .verdict-indicator.fake { background: var(--fake-color); }
+        .verdict-indicator.real { background: var(--real-color); }
 
+        .verdict-text {
+            font-size: .9375rem;
+            font-weight: 600;
+        }
+
+        .verdict-text.fake { color: var(--fake-color); }
+        .verdict-text.real { color: var(--real-color); }
+
+        .verdict-confidence {
+            margin-left: auto;
+            font-size: .8125rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        .result-body {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-top: none;
+            border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+            padding: 1.25rem;
+        }
+
+        .prob-row {
+            display: flex;
+            align-items: center;
+            gap: .75rem;
+            margin-bottom: .75rem;
+        }
+
+        .prob-label {
+            width: 40px;
+            font-size: .75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: .04em;
+            text-align: right;
+            flex-shrink: 0;
+        }
+
+        .prob-label.fake { color: var(--fake-color); }
+        .prob-label.real { color: var(--real-color); }
+
+        .prob-track {
+            flex: 1;
+            height: 6px;
+            background: var(--accent-soft);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .prob-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width .5s ease;
+        }
+
+        .prob-fill.fake { background: var(--fake-color); }
+        .prob-fill.real { background: var(--real-color); }
+
+        .prob-value {
+            width: 48px;
+            font-size: .8125rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            text-align: right;
+            flex-shrink: 0;
+        }
+
+        .divider {
+            height: 1px;
+            background: var(--border);
+            margin: 1rem 0;
+        }
+
+        .result-meta {
+            font-size: .75rem;
+            color: var(--text-tertiary);
+        }
+
+        .result-meta strong {
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        .extracted-text {
+            margin-top: 1rem;
+            padding: .75rem;
+            background: var(--bg);
+            border-radius: var(--radius);
+            font-size: .8125rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+            max-height: 140px;
+            overflow-y: auto;
+        }
+
+        .extracted-text-heading {
+            font-size: .6875rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: .05em;
+            color: var(--text-tertiary);
+            margin-bottom: .375rem;
+        }
+
+        /* ---- Footer ---- */
         footer {
-            margin-top: auto;
             padding: 1.5rem;
             text-align: center;
-            color: var(--muted);
-            font-size: .8rem;
+            font-size: .75rem;
+            color: var(--text-tertiary);
+            border-top: 1px solid var(--border);
         }
 
-        @media (max-width: 600px) {
-            header h1 { font-size: 1.5rem; }
-            .container { padding: 1rem; }
+        /* ---- Responsive ---- */
+        @media (max-width: 640px) {
+            .topbar { padding: 0 1rem; }
+            .topbar-meta { gap: .75rem; }
+            .topbar-stat:last-child { display: none; }
+            .hero h1 { font-size: 1.375rem; }
+            .layout { padding: 2rem 1rem 1.5rem; }
         }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <header>
-        <h1>🔍 Detección de Fake News</h1>
-        <p>Ingresa una URL o texto para analizar si una noticia es real o falsa</p>
-    </header>
+<div class="topbar">
+    <span class="topbar-brand">Verificador de Noticias</span>
+    <div class="topbar-meta">
+        <span class="topbar-stat">Accuracy: <strong>{{ "%.2f"|format(metricas.accuracy * 100) }}%</strong></span>
+        <span class="topbar-stat">Modelo: <strong>TF-IDF + LR</strong></span>
+        <span class="topbar-stat">29 531 registros</span>
+    </div>
+</div>
 
-    <div class="model-info">
-        <div class="badge">
-            Accuracy del modelo: <strong>{{ "%.2f"|format(metricas.accuracy * 100) }}%</strong>
-        </div>
-        <div class="badge">
-            Modelo: <strong>TF-IDF + Logistic Regression</strong>
-        </div>
-        <div class="badge">
-            Datasets: <strong>FakeNewsNet + TextDB3</strong>
-        </div>
+<main class="layout">
+    <div class="hero">
+        <h1>Analiza la veracidad de una noticia</h1>
+        <p>Ingresa la URL de un articulo o pega el texto directamente para obtener una prediccion basada en aprendizaje automatico.</p>
     </div>
 
     <div class="card">
         <div class="tabs">
-            <button class="tab-btn active" onclick="cambiarTab('url')">🌐 Analizar URL</button>
-            <button class="tab-btn" onclick="cambiarTab('texto')">📝 Analizar Texto</button>
+            <button class="tab-btn active" onclick="cambiarTab('url', this)">Analizar por URL</button>
+            <button class="tab-btn" onclick="cambiarTab('texto', this)">Analizar por texto</button>
         </div>
 
-        <div id="tab-url" class="tab-content active">
-            <label for="input-url">URL del artículo de noticias</label>
-            <input type="url" id="input-url" placeholder="https://ejemplo.com/noticia-123">
-        </div>
+        <div class="card-body">
+            <div id="tab-url" class="tab-content active">
+                <label class="field-label" for="input-url">Direccion URL del articulo</label>
+                <input class="input" type="url" id="input-url" placeholder="https://ejemplo.com/articulo" autocomplete="off">
+            </div>
 
-        <div id="tab-texto" class="tab-content">
-            <label for="input-texto">Pega aquí el texto de la noticia</label>
-            <textarea id="input-texto" placeholder="Pega el título y contenido de la noticia aquí…"></textarea>
-        </div>
+            <div id="tab-texto" class="tab-content">
+                <label class="field-label" for="input-texto">Contenido de la noticia</label>
+                <textarea class="textarea" id="input-texto" placeholder="Pega el titulo y cuerpo de la noticia..."></textarea>
+            </div>
 
-        <button class="btn-analizar" id="btn-analizar" onclick="analizar()">
-            Analizar Noticia
-        </button>
+            <button class="btn-primary" id="btn-analizar" onclick="analizar()">
+                Analizar
+            </button>
+        </div>
     </div>
 
-    <div class="spinner" id="spinner">Analizando noticia…</div>
+    <div class="spinner" id="spinner">
+        <span class="spinner-dot"></span>
+        <span class="spinner-dot"></span>
+        <span class="spinner-dot"></span>
+        <span class="spinner-text">Analizando contenido</span>
+    </div>
 
     <div class="error-msg" id="error-msg"></div>
 
-    <div class="card resultado" id="resultado">
-        <div class="resultado-header">
-            <span class="resultado-icon" id="res-icon"></span>
-            <span class="resultado-label" id="res-label"></span>
+    <div class="resultado" id="resultado">
+        <div class="result-verdict" id="res-verdict">
+            <span class="verdict-indicator" id="res-indicator"></span>
+            <span class="verdict-text" id="res-label"></span>
+            <span class="verdict-confidence" id="res-confidence"></span>
         </div>
-
-        <div class="barras">
-            <div class="barra-container">
-                <span class="barra-label" style="color: var(--fake);">FAKE</span>
-                <div class="barra-track">
-                    <div class="barra-fill fake-bar" id="bar-fake" style="width: 0%;">0%</div>
+        <div class="result-body">
+            <div class="prob-row">
+                <span class="prob-label fake">Fake</span>
+                <div class="prob-track">
+                    <div class="prob-fill fake" id="bar-fake" style="width:0%"></div>
                 </div>
+                <span class="prob-value" id="val-fake">0%</span>
             </div>
-            <div class="barra-container">
-                <span class="barra-label" style="color: var(--real);">REAL</span>
-                <div class="barra-track">
-                    <div class="barra-fill real-bar" id="bar-real" style="width: 0%;">0%</div>
+            <div class="prob-row">
+                <span class="prob-label real">Real</span>
+                <div class="prob-track">
+                    <div class="prob-fill real" id="bar-real" style="width:0%"></div>
                 </div>
+                <span class="prob-value" id="val-real">0%</span>
             </div>
-        </div>
 
-        <div class="accuracy-badge">
-            Accuracy general del modelo: <span id="res-accuracy"></span>
-        </div>
+            <div class="divider"></div>
 
-        <div class="texto-extraido" id="res-texto"></div>
+            <div class="result-meta">
+                Accuracy general del modelo: <strong id="res-accuracy"></strong>
+            </div>
+
+            <div class="extracted-text-heading" style="margin-top:1rem;">Texto analizado</div>
+            <div class="extracted-text" id="res-texto"></div>
+        </div>
     </div>
-</div>
+</main>
 
 <footer>
-    Jornada de Divulgación — ESCOM — Detección de Fake News con Machine Learning
+    Jornada de Divulgacion &mdash; ESCOM &mdash; Deteccion de Fake News con Machine Learning
 </footer>
 
 <script>
     let currentTab = 'url';
 
-    function cambiarTab(tab) {
+    function cambiarTab(tab, btn) {
         currentTab = tab;
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
         document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-        event.target.classList.add('active');
         document.getElementById('tab-' + tab).classList.add('active');
     }
 
@@ -384,19 +520,17 @@
         const errorEl = document.getElementById('error-msg');
         const resEl = document.getElementById('resultado');
 
-        // Ocultar estados previos
         errorEl.classList.remove('visible');
         resEl.classList.remove('visible');
 
-        // Preparar payload
         let payload = {};
         if (currentTab === 'url') {
             const url = document.getElementById('input-url').value.trim();
-            if (!url) { mostrarError('Por favor ingresa una URL.'); return; }
+            if (!url) { mostrarError('Ingresa una URL para continuar.'); return; }
             payload.url = url;
         } else {
             const texto = document.getElementById('input-texto').value.trim();
-            if (!texto) { mostrarError('Por favor ingresa un texto.'); return; }
+            if (!texto) { mostrarError('Ingresa un texto para continuar.'); return; }
             payload.texto = texto;
         }
 
@@ -436,18 +570,23 @@
     function mostrarResultado(data) {
         const resEl = document.getElementById('resultado');
         const isFake = data.prediccion === 'FAKE';
+        const cls = isFake ? 'fake' : 'real';
 
-        document.getElementById('res-icon').textContent = isFake ? '⚠️' : '✅';
+        const verdict = document.getElementById('res-verdict');
+        verdict.className = 'result-verdict ' + cls;
+
+        document.getElementById('res-indicator').className = 'verdict-indicator ' + cls;
+
         const label = document.getElementById('res-label');
-        label.textContent = data.prediccion + ' — ' + data.confianza + '% de confianza';
-        label.className = 'resultado-label ' + (isFake ? 'fake' : 'real');
+        label.textContent = isFake ? 'Noticia probablemente falsa' : 'Noticia probablemente real';
+        label.className = 'verdict-text ' + cls;
 
-        const barFake = document.getElementById('bar-fake');
-        const barReal = document.getElementById('bar-real');
-        barFake.style.width = data.prob_fake + '%';
-        barFake.textContent = data.prob_fake + '%';
-        barReal.style.width = data.prob_real + '%';
-        barReal.textContent = data.prob_real + '%';
+        document.getElementById('res-confidence').textContent = data.confianza + '% confianza';
+
+        document.getElementById('bar-fake').style.width = data.prob_fake + '%';
+        document.getElementById('val-fake').textContent = data.prob_fake + '%';
+        document.getElementById('bar-real').style.width = data.prob_real + '%';
+        document.getElementById('val-real').textContent = data.prob_real + '%';
 
         document.getElementById('res-accuracy').textContent = data.accuracy_modelo + '%';
         document.getElementById('res-texto').textContent = data.texto_extraido;
@@ -455,7 +594,6 @@
         resEl.classList.add('visible');
     }
 
-    // Enter key triggers analysis
     document.getElementById('input-url').addEventListener('keydown', e => {
         if (e.key === 'Enter') analizar();
     });

@@ -12,13 +12,6 @@ import pickle
 import warnings
 
 import numpy as np
-import pandas as pd
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.linear_model import LogisticRegression
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score, classification_report
-from sklearn.pipeline import Pipeline
-
 from flask import Flask, render_template, request, jsonify
 
 import requests
@@ -48,6 +41,8 @@ def preparar_datos(path1, path2):
       - text  : título + texto del artículo (cuando esté disponible)
       - label : 0 = FAKE, 1 = REAL
     """
+    import pandas as pd
+
     # --- Dataset 1: FakeNewsNet (tiene título pero NO tiene cuerpo de texto) ---
     df1 = pd.read_csv(os.path.join(path1, "FakeNewsNet.csv"))
     df1 = df1[["title", "real"]].dropna(subset=["title"])
@@ -85,6 +80,13 @@ def limpiar_texto(texto):
 
 def entrenar_modelo():
     """Entrena el pipeline TF-IDF + Logistic Regression y guarda en disco."""
+    import pandas as pd
+    from sklearn.feature_extraction.text import TfidfVectorizer
+    from sklearn.linear_model import LogisticRegression
+    from sklearn.model_selection import train_test_split
+    from sklearn.metrics import accuracy_score, classification_report
+    from sklearn.pipeline import Pipeline
+
     path1, path2 = descargar_datasets()
     df = preparar_datos(path1, path2)
 

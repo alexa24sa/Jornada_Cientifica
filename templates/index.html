@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detección de Fake News</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --card: #1e293b;
+            --accent: #3b82f6;
+            --accent-hover: #2563eb;
+            --fake: #ef4444;
+            --real: #22c55e;
+            --text: #e2e8f0;
+            --muted: #94a3b8;
+            --border: #334155;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            max-width: 800px;
+            width: 100%;
+            padding: 2rem 1.5rem;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        header h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent), #a855f7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: .5rem;
+        }
+
+        header p {
+            color: var(--muted);
+            font-size: .95rem;
+        }
+
+        .model-info {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 2rem;
+        }
+
+        .badge {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: .5rem 1rem;
+            font-size: .85rem;
+        }
+
+        .badge strong { color: var(--accent); }
+
+        .card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .tabs {
+            display: flex;
+            gap: .5rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: .65rem;
+            background: transparent;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--muted);
+            cursor: pointer;
+            font-size: .9rem;
+            transition: all .2s;
+        }
+
+        .tab-btn.active {
+            background: var(--accent);
+            color: #fff;
+            border-color: var(--accent);
+        }
+
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        label {
+            display: block;
+            font-size: .85rem;
+            color: var(--muted);
+            margin-bottom: .35rem;
+        }
+
+        input[type="url"], textarea {
+            width: 100%;
+            padding: .75rem 1rem;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            font-size: .95rem;
+            outline: none;
+            transition: border-color .2s;
+        }
+
+        input[type="url"]:focus, textarea:focus {
+            border-color: var(--accent);
+        }
+
+        textarea { resize: vertical; min-height: 120px; }
+
+        .btn-analizar {
+            width: 100%;
+            padding: .85rem;
+            margin-top: 1rem;
+            background: var(--accent);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background .2s;
+        }
+
+        .btn-analizar:hover { background: var(--accent-hover); }
+        .btn-analizar:disabled { opacity: .5; cursor: not-allowed; }
+
+        /* Resultado */
+        .resultado { display: none; }
+        .resultado.visible { display: block; }
+
+        .resultado-header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: .75rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .resultado-label {
+            font-size: 1.6rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .resultado-label.fake { color: var(--fake); }
+        .resultado-label.real { color: var(--real); }
+
+        .resultado-icon {
+            font-size: 2rem;
+        }
+
+        .barras {
+            display: flex;
+            flex-direction: column;
+            gap: .75rem;
+        }
+
+        .barra-container {
+            display: flex;
+            align-items: center;
+            gap: .75rem;
+        }
+
+        .barra-label {
+            width: 55px;
+            font-size: .85rem;
+            font-weight: 600;
+            text-align: right;
+        }
+
+        .barra-track {
+            flex: 1;
+            height: 26px;
+            background: var(--bg);
+            border-radius: 6px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .barra-fill {
+            height: 100%;
+            border-radius: 6px;
+            transition: width .6s ease;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 8px;
+            font-size: .8rem;
+            font-weight: 600;
+            min-width: 40px;
+        }
+
+        .barra-fill.fake-bar { background: var(--fake); }
+        .barra-fill.real-bar { background: var(--real); }
+
+        .texto-extraido {
+            margin-top: 1.25rem;
+            padding: 1rem;
+            background: var(--bg);
+            border-radius: 8px;
+            font-size: .85rem;
+            color: var(--muted);
+            max-height: 150px;
+            overflow-y: auto;
+            line-height: 1.5;
+        }
+
+        .accuracy-badge {
+            margin-top: 1rem;
+            text-align: center;
+            font-size: .85rem;
+            color: var(--muted);
+        }
+
+        .accuracy-badge span { color: var(--accent); font-weight: 600; }
+
+        .error-msg {
+            background: rgba(239, 68, 68, .15);
+            border: 1px solid var(--fake);
+            border-radius: 8px;
+            padding: 1rem;
+            color: var(--fake);
+            text-align: center;
+            display: none;
+        }
+
+        .error-msg.visible { display: block; }
+
+        .spinner {
+            display: none;
+            text-align: center;
+            padding: 1.5rem;
+            color: var(--muted);
+        }
+
+        .spinner.visible { display: block; }
+
+        .spinner::after {
+            content: '';
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            border: 3px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin .7s linear infinite;
+            vertical-align: middle;
+            margin-right: .5rem;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        footer {
+            margin-top: auto;
+            padding: 1.5rem;
+            text-align: center;
+            color: var(--muted);
+            font-size: .8rem;
+        }
+
+        @media (max-width: 600px) {
+            header h1 { font-size: 1.5rem; }
+            .container { padding: 1rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>🔍 Detección de Fake News</h1>
+        <p>Ingresa una URL o texto para analizar si una noticia es real o falsa</p>
+    </header>
+
+    <div class="model-info">
+        <div class="badge">
+            Accuracy del modelo: <strong>{{ "%.2f"|format(metricas.accuracy * 100) }}%</strong>
+        </div>
+        <div class="badge">
+            Modelo: <strong>TF-IDF + Logistic Regression</strong>
+        </div>
+        <div class="badge">
+            Datasets: <strong>FakeNewsNet + TextDB3</strong>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="tabs">
+            <button class="tab-btn active" onclick="cambiarTab('url')">🌐 Analizar URL</button>
+            <button class="tab-btn" onclick="cambiarTab('texto')">📝 Analizar Texto</button>
+        </div>
+
+        <div id="tab-url" class="tab-content active">
+            <label for="input-url">URL del artículo de noticias</label>
+            <input type="url" id="input-url" placeholder="https://ejemplo.com/noticia-123">
+        </div>
+
+        <div id="tab-texto" class="tab-content">
+            <label for="input-texto">Pega aquí el texto de la noticia</label>
+            <textarea id="input-texto" placeholder="Pega el título y contenido de la noticia aquí…"></textarea>
+        </div>
+
+        <button class="btn-analizar" id="btn-analizar" onclick="analizar()">
+            Analizar Noticia
+        </button>
+    </div>
+
+    <div class="spinner" id="spinner">Analizando noticia…</div>
+
+    <div class="error-msg" id="error-msg"></div>
+
+    <div class="card resultado" id="resultado">
+        <div class="resultado-header">
+            <span class="resultado-icon" id="res-icon"></span>
+            <span class="resultado-label" id="res-label"></span>
+        </div>
+
+        <div class="barras">
+            <div class="barra-container">
+                <span class="barra-label" style="color: var(--fake);">FAKE</span>
+                <div class="barra-track">
+                    <div class="barra-fill fake-bar" id="bar-fake" style="width: 0%;">0%</div>
+                </div>
+            </div>
+            <div class="barra-container">
+                <span class="barra-label" style="color: var(--real);">REAL</span>
+                <div class="barra-track">
+                    <div class="barra-fill real-bar" id="bar-real" style="width: 0%;">0%</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="accuracy-badge">
+            Accuracy general del modelo: <span id="res-accuracy"></span>
+        </div>
+
+        <div class="texto-extraido" id="res-texto"></div>
+    </div>
+</div>
+
+<footer>
+    Jornada de Divulgación — ESCOM — Detección de Fake News con Machine Learning
+</footer>
+
+<script>
+    let currentTab = 'url';
+
+    function cambiarTab(tab) {
+        currentTab = tab;
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        event.target.classList.add('active');
+        document.getElementById('tab-' + tab).classList.add('active');
+    }
+
+    async function analizar() {
+        const btn = document.getElementById('btn-analizar');
+        const spinner = document.getElementById('spinner');
+        const errorEl = document.getElementById('error-msg');
+        const resEl = document.getElementById('resultado');
+
+        // Ocultar estados previos
+        errorEl.classList.remove('visible');
+        resEl.classList.remove('visible');
+
+        // Preparar payload
+        let payload = {};
+        if (currentTab === 'url') {
+            const url = document.getElementById('input-url').value.trim();
+            if (!url) { mostrarError('Por favor ingresa una URL.'); return; }
+            payload.url = url;
+        } else {
+            const texto = document.getElementById('input-texto').value.trim();
+            if (!texto) { mostrarError('Por favor ingresa un texto.'); return; }
+            payload.texto = texto;
+        }
+
+        // Estado de carga
+        btn.disabled = true;
+        spinner.classList.add('visible');
+
+        try {
+            const resp = await fetch('/analizar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+            });
+
+            const data = await resp.json();
+
+            if (!resp.ok) {
+                mostrarError(data.error || 'Error desconocido.');
+                return;
+            }
+
+            mostrarResultado(data);
+        } catch (e) {
+            mostrarError('Error de conexión con el servidor.');
+        } finally {
+            btn.disabled = false;
+            spinner.classList.remove('visible');
+        }
+    }
+
+    function mostrarError(msg) {
+        const el = document.getElementById('error-msg');
+        el.textContent = msg;
+        el.classList.add('visible');
+    }
+
+    function mostrarResultado(data) {
+        const resEl = document.getElementById('resultado');
+        const isFake = data.prediccion === 'FAKE';
+
+        document.getElementById('res-icon').textContent = isFake ? '⚠️' : '✅';
+        const label = document.getElementById('res-label');
+        label.textContent = data.prediccion + ' — ' + data.confianza + '% de confianza';
+        label.className = 'resultado-label ' + (isFake ? 'fake' : 'real');
+
+        const barFake = document.getElementById('bar-fake');
+        const barReal = document.getElementById('bar-real');
+        barFake.style.width = data.prob_fake + '%';
+        barFake.textContent = data.prob_fake + '%';
+        barReal.style.width = data.prob_real + '%';
+        barReal.textContent = data.prob_real + '%';
+
+        document.getElementById('res-accuracy').textContent = data.accuracy_modelo + '%';
+        document.getElementById('res-texto').textContent = data.texto_extraido;
+
+        resEl.classList.add('visible');
+    }
+
+    // Enter key triggers analysis
+    document.getElementById('input-url').addEventListener('keydown', e => {
+        if (e.key === 'Enter') analizar();
+    });
+</script>
+
+</body>
+</html>

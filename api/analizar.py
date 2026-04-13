@@ -1,44 +1,14 @@
-"""
-Serverless entry point for Vercel.
-Self-contained Flask app that loads the pre-trained model.
-"""
+"""Vercel serverless function: POST /api/analizar"""
 
-import os
 import re
-import pickle
-
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, request, jsonify
 import requests
 from bs4 import BeautifulSoup
 
-# ---------------------------------------------------------------------------
-# Paths
-# ---------------------------------------------------------------------------
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-MODEL_PATH = os.path.join(BASE_DIR, "modelo_fake_news.pkl")
-METRICS_PATH = os.path.join(BASE_DIR, "metricas.pkl")
-TEMPLATE_DIR = os.path.join(BASE_DIR, "templates")
+from api._model import pipeline_global, metricas_global
 
-# ---------------------------------------------------------------------------
-# Flask app
-# ---------------------------------------------------------------------------
-app = Flask(__name__, template_folder=TEMPLATE_DIR)
+app = Flask(__name__)
 
-# ---------------------------------------------------------------------------
-# Load model at cold start
-# ---------------------------------------------------------------------------
-try:
-    with open(MODEL_PATH, "rb") as f:
-        pipeline_global = pickle.load(f)
-    with open(METRICS_PATH, "rb") as f:
-        metricas_global = pickle.load(f)
-except Exception as e:
-    pipeline_global = None
-    metricas_global = {"accuracy": 0, "report": {}, "error": str(e)}
-
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
 HEADERS = {
     "User-Agent": (
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
@@ -104,19 +74,11 @@ def predecir(texto):
         "confianza": round(float(max(proba)) * 100, 2),
         "prob_fake": round(float(proba[0]) * 100, 2),
         "prob_real": round(float(proba[1]) * 100, 2),
-        "texto_extraido": texto[:500] + ("…" if len(texto) > 500 else ""),
+        "texto_extraido": texto[:500] + ("\u2026" if len(texto) > 500 else ""),
     }
 
 
-# ---------------------------------------------------------------------------
-# Routes
-# ---------------------------------------------------------------------------
-@app.route("/")
-def index():
-    return render_template("index.html", metricas=metricas_global)
-
-
-@app.route("/analizar", methods=["POST"])
+@app.route("/api/analizar", methods=["POST"])
 def analizar():
     if pipeline_global is None:
         return jsonify({"error": "Modelo no disponible: " + metricas_global.get("error", "")}), 500

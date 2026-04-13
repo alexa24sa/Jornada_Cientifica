@@ -11,7 +11,6 @@ import re
 import pickle
 import warnings
 
-import kagglehub
 import numpy as np
 import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -37,6 +36,7 @@ METRICS_PATH = os.path.join(os.path.dirname(__file__), "metricas.pkl")
 
 def descargar_datasets():
     """Descarga ambos datasets de Kaggle y devuelve las rutas."""
+    import kagglehub
     path1 = kagglehub.dataset_download("algord/fake-news")
     path2 = kagglehub.dataset_download("hassanamin/textdb3")
     return path1, path2

@@ -1,7 +1,7 @@
 """Vercel serverless function: GET /api/info"""
 
 from flask import Flask, jsonify
-from api._model import metricas_global
+from _model import metricas_global
 
 app = Flask(__name__)
 

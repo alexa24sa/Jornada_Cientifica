@@ -5,7 +5,7 @@ from flask import Flask, request, jsonify
 import requests
 from bs4 import BeautifulSoup
 
-from api._model import pipeline_global, metricas_global
+from _model import pipeline_global, metricas_global
 
 app = Flask(__name__)
 
@@ -27,17 +27,6 @@ def limpiar_texto(texto):
 
 
 def extraer_texto_url(url):
-    try:
-        from newspaper import Article
-        articulo = Article(url)
-        articulo.download()
-        articulo.parse()
-        texto = (articulo.title or "") + " " + (articulo.text or "")
-        if len(texto.strip()) > 50:
-            return texto.strip(), None
-    except Exception:
-        pass
-
     try:
         resp = requests.get(url, headers=HEADERS, timeout=15, verify=True)
         resp.raise_for_status()
